@@ -10,7 +10,12 @@ const FISH_SPECIES = [
   'Catfish', 'Sunfish', 'Crappie', 'Bluegill', 'Other'
 ];
 
-export default function AddFishScreen() {
+// Available action types
+const ACTION_TYPES = ['Add', 'Remove'];
+
+export default function ManageFishScreen() {
+  const [actionType, setActionType] = useState('Add');
+  const [showActionTypes, setShowActionTypes] = useState(false);
   const [species, setSpecies] = useState('');
   const [caughtBy, setCaughtBy] = useState('');
   const [length, setLength] = useState('');
@@ -40,6 +45,46 @@ export default function AddFishScreen() {
     return true;
   };
 
+  const handleRemoveFish = async () => {
+    if (!validateInputs()) return;
+
+    setSubmitting(true);
+
+    try {
+      const fishData = {
+        species: species.trim(),
+        caught_by: caughtBy.trim(),
+        length_inches: parseFloat(length),
+        catch_date: catchDate
+      };
+
+      await apiService.deleteFish(fishData);
+      
+      Alert.alert(
+        'Success',
+        'Fish catch removed successfully!',
+        [
+          { 
+            text: 'Dismiss', 
+            onPress: () => router.push('./manageFish')
+          }
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to remove fish catch');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (actionType === 'Add') {
+      handleAddFish();
+    } else {
+      handleRemoveFish();
+    }
+  };
+
   const handleAddFish = async () => {
     if (!validateInputs()) return;
 
@@ -61,7 +106,7 @@ export default function AddFishScreen() {
         [
           { 
             text: 'Dismiss', 
-            onPress: () => router.push('./index')
+            onPress: () => router.push('./manageFish')
           }
         ]
       );
@@ -80,7 +125,7 @@ export default function AddFishScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Add Fish Catch</Text>
+        <Text style={styles.headerText}>Manage Fish Catch</Text>
         <MaterialCommunityIcons name="fish" size={30} color="#ffd33d" />
       </View>
 
@@ -91,6 +136,34 @@ export default function AddFishScreen() {
       )}
 
       <View style={styles.card}>
+        <Text style={styles.label}>Action</Text>
+        <TouchableOpacity 
+          style={styles.input} 
+          onPress={() => setShowActionTypes(!showActionTypes)}
+        >
+          <Text style={actionType ? styles.inputText : styles.placeholderText}>
+            {actionType}
+          </Text>
+          <Ionicons name={showActionTypes ? "chevron-up" : "chevron-down"} size={20} color="#aaa" />
+        </TouchableOpacity>
+
+        {showActionTypes && (
+          <View style={styles.dropdown}>
+            {ACTION_TYPES.map((item) => (
+              <TouchableOpacity 
+                key={item} 
+                style={styles.dropdownItem} 
+                onPress={() => {
+                  setActionType(item);
+                  setShowActionTypes(false);
+                }}
+              >
+                <Text style={styles.dropdownText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <Text style={styles.label}>Fish Species</Text>
         <TouchableOpacity 
           style={styles.input} 
@@ -156,13 +229,13 @@ export default function AddFishScreen() {
 
         <TouchableOpacity 
           style={styles.submitButton} 
-          onPress={handleAddFish}
+          onPress={handleSubmit}
           disabled={submitting}
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#25292e" />
           ) : (
-            <Text style={styles.submitButtonText}>Add Fish Catch</Text>
+            <Text style={styles.submitButtonText}>Submit</Text>
           )}
         </TouchableOpacity>
       </View>

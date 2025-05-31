@@ -48,9 +48,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="contest"
+        name="contests"
         options={{
-            title: 'Contest',
+            title: 'Contests',
             tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
                 name={focused ? 'trophy' : 'trophy-outline'}

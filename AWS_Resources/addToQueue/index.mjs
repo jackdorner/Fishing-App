@@ -6,7 +6,7 @@ const QUEUE_URL = process.env.QUEUE_URL;
 
 function isValidDate(str) {
     return !isNaN(Date.parse(str));
-  }
+}
 
 const fishSchema = {
   type: "object",
@@ -20,7 +20,28 @@ const fishSchema = {
   additionalProperties: false
 };
 
-function validate(body) {
+const contestSchema = {
+  type: "object",
+  required: ["name", "date", "places"],
+  properties: {
+    name: { type: "string" },
+    date: { type: "string", format: "date" },
+    places: { 
+      type: "array", 
+      items: {
+        type: "object",
+        required: ["place", "name"],
+        properties: {
+          place: { type: "number" },
+          name: { type: "string" }
+        }
+      }
+    }
+  },
+  additionalProperties: false
+};
+
+function validateFish(body) {
     return (
       body &&
       typeof body.caught_by === "string" &&
@@ -29,7 +50,29 @@ function validate(body) {
       typeof body.catch_date === "string" &&
       isValidDate(body.catch_date)
     );
+}
+
+function validateContest(body, action = "ADD") {
+  // For REMOVE action, only the contest name is required
+  if (action === "REMOVE") {
+    return body && typeof body.name === "string";
   }
+  
+  // For ADD action, full validation is required
+  if (!body || typeof body.name !== "string" || !body.date || !isValidDate(body.date)) {
+    return false;
+  }
+  
+  if (!Array.isArray(body.places) || body.places.length === 0) {
+    return false;
+  }
+  
+  return body.places.every(place => 
+    typeof place === "object" && 
+    typeof place.place === "number" && 
+    typeof place.name === "string"
+  );
+}
 
 export const handler = async (event) => {
   console.log("🔹 Event received:", JSON.stringify(event, null, 2));
@@ -47,15 +90,26 @@ export const handler = async (event) => {
     };
   }
 
+  // Determine the type of submission (fish or contest)
+  const submissionType = body.type || "FISH";  // Default to fish for backward compatibility
   let action;
-  let isValid = validate(body);
+  let isValid = false;
+  
+  if (submissionType === "FISH") {
+    isValid = validateFish(body.data || body);
+    // For backward compatibility, if data is not provided, use the body directly
+    body = body.data || body;
+  } else if (submissionType === "CONTEST") {
+    isValid = validateContest(body.data, method === "DELETE" ? "REMOVE" : "ADD");
+    body = body.data;
+  }
 
   if (!isValid) {
-    console.error("Invalid request");
+    console.error(`Invalid ${submissionType} request`);
     return {
       statusCode: 400,
       body: JSON.stringify({
-        error: "Invalid request body",
+        error: `Invalid ${submissionType} request body`,
         details: body,
       }),
     };
@@ -72,6 +126,7 @@ export const handler = async (event) => {
 
   // Send message to SQS
   const message = {
+    type: submissionType,
     action,
     payload: body,
   };
@@ -82,10 +137,15 @@ export const handler = async (event) => {
       MessageBody: JSON.stringify(message),
     }));
 
-    console.log(`✅ ${action} message sent to SQS:`, result.MessageId);
+    console.log(`✅ ${submissionType} ${action} message sent to SQS:`, result.MessageId);
+    
+    const successMsg = submissionType === "FISH" 
+      ? `Fish ${action.toLowerCase()}ed ${action === "REMOVE" ? "from" : "to"} queue`
+      : `Contest ${action.toLowerCase()}ed ${action === "REMOVE" ? "from" : "to"} queue`;
+    
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: `Fish ${action === "ADD" ? "added" : "removed"} from queue` }),
+      body: JSON.stringify({ message: successMsg }),
     };
   } catch (err) {
     console.error("🔥 Error sending to SQS:", err);
