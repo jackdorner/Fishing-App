@@ -35,9 +35,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="addFish"
+        name="manageFish"
         options={{
-            title: 'Add Fish',
+            title: 'Manage Fish',
             tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
                 name={focused ? 'fish' : 'fish'}
