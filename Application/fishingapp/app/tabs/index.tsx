@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { apiService, RemoveContest } from '../../services/apiService';
+import { apiService } from '../../services/apiService';
 
+// Update interface to match the actual contest structure coming from API
 interface Contest {
   contest_name: string;
-  contest_date: string;
-  place1: string;
-  place2: string;
-  place3: string;
-  place4: string;
-  place5: string;
+  first: { name: string; place: number; value: number };
+  second: { name: string; place: number; value: number };
+  third: { name: string; place: number; value: number };
+  fourth: { name: string; place: number; value: number };
+  fifth: { name: string; place: number; value: number };
 }
 
 export default function HomeScreen() {
@@ -24,10 +24,10 @@ export default function HomeScreen() {
       setError(null);
       setLoading(true);
       
-      const response = await apiService.getContests();
+      const contestsData = await apiService.getContests();
       
-      if (response && Array.isArray(response)) {
-        setContests(response);
+      if (contestsData && Array.isArray(contestsData)) {
+        setContests(contestsData);
       } else {
         setContests([]);
       }
@@ -49,7 +49,11 @@ export default function HomeScreen() {
     fetchContests();
   };
 
-  const renderPlaceItem = (place: number, name: string) => {
+  const renderPlaceItem = (placeObj: { name: string; place: number; value: number }) => {
+    const place = placeObj.place;
+    const name = placeObj.name;
+    const value = placeObj.value;
+    
     const placeText = place === 1 ? '1st' : 
                       place === 2 ? '2nd' : 
                       place === 3 ? '3rd' : `${place}th`;
@@ -58,6 +62,7 @@ export default function HomeScreen() {
       <View style={styles.placeRow} key={place}>
         <Text style={styles.placeNumber}>{placeText}</Text>
         <Text style={styles.placeName}>{name}</Text>
+        <Text style={styles.placeValue}>{value}</Text>
       </View>
     );
   };
@@ -100,15 +105,14 @@ export default function HomeScreen() {
             <View key={index} style={styles.card}>
               <View style={styles.contestHeader}>
                 <Text style={styles.contestName}>{contest.contest_name}</Text>
-                <Text style={styles.contestDate}>{contest.contest_date}</Text>
               </View>
               
               <View style={styles.placesContainer}>
-                {renderPlaceItem(1, contest.place1)}
-                {renderPlaceItem(2, contest.place2)}
-                {renderPlaceItem(3, contest.place3)}
-                {renderPlaceItem(4, contest.place4)}
-                {renderPlaceItem(5, contest.place5)}
+                {renderPlaceItem(contest.first)}
+                {renderPlaceItem(contest.second)}
+                {renderPlaceItem(contest.third)}
+                {renderPlaceItem(contest.fourth)}
+                {renderPlaceItem(contest.fifth)}
               </View>
             </View>
           ))}
@@ -243,5 +247,11 @@ const styles = StyleSheet.create({
   placeName: {
     color: '#fff',
     fontSize: 16,
+    flex: 1,
+  },
+  placeValue: {
+    color: '#aaa',
+    fontSize: 16,
+    marginLeft: 10,
   }
 });
