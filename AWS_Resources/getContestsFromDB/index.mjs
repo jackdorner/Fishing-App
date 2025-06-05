@@ -29,6 +29,62 @@ function Contest(contest_name, first, second, third, fourth, fifth) {
 }
 
 /**
+ * Creates a list of Contest objects from rows containing contest_name, contestant_name, and place
+ * @param {Array} rows - Query results with contest_name, contestant_name, and place fields
+ * @returns {Array} - Array of Contest objects
+ */
+function createContestsFromRows(rows) {
+  // Get unique contest names
+  const contestNames = [...new Set(rows.map(row => row.contest_name))];
+  const contests = [];
+  
+  // Process each contest separately
+  for (const contestName of contestNames) {
+    // Filter rows for this specific contest
+    const contestRows = rows.filter(row => row.contest_name === contestName);
+    
+    // Initialize place objects
+    let first = null, second = null, third = null, fourth = null, fifth = null;
+    
+    // Assign contestants to places based on the 'place' field in rows
+    for (const row of contestRows) {
+      const placeObj = new Place(row.contestant_name, row.place, row.place);
+      
+      switch (row.place) {
+        case 1:
+          first = placeObj;
+          break;
+        case 2:
+          second = placeObj;
+          break;
+        case 3:
+          third = placeObj;
+          break;
+        case 4:
+          fourth = placeObj;
+          break;
+        case 5:
+          fifth = placeObj;
+          break;
+      }
+    }
+    
+    // Check for missing positions and add empty places
+    if (!first) first = new Place('', 1, 0);
+    if (!second) second = new Place('', 2, 0);
+    if (!third) third = new Place('', 3, 0);
+    if (!fourth) fourth = new Place('', 4, 0);
+    if (!fifth) fifth = new Place('', 5, 0);
+    
+    // Create contest object and add to list
+    const contest = new Contest(contestName, first, second, third, fourth, fifth);
+    contests.push(contest);
+  }
+  
+  return contests;
+}
+
+/**
  * Creates a Contest object from query results for a specific contest
  * @param {string} contestName - The name of the contest to extract
  * @param {Array} results - The rows returned by the contests query
@@ -311,48 +367,38 @@ export async function handler(event) {
 
   try {
     let contestsResult = await client.query(getContestsQuery);
-    contestsResult = contestsResult.rows;
-    //FIXME
+    const regularContests = createContestsFromRows(contestsResult.rows);
+    contests.push(...regularContests);
 
     let walleyeCountResult = await client.query(getWalleyeCountQuery);
-    walleyeCountResult = walleyeCountResult.rows;
-    contests.push(createContestFromResults('Most Walleye', walleyeCountResult));
+    contests.push(createContestFromResults('Most Walleye', walleyeCountResult.rows));
 
     let walleyeOver20Result = await client.query(getWalleyeOver20Query);
-    walleyeOver20Result = walleyeOver20Result.rows;
-    contests.push(createContestFromResults('Most Walleye Over 20 Inches', walleyeOver20Result));
+    contests.push(createContestFromResults('Most Walleye Over 20 Inches', walleyeOver20Result.rows));
     
     let mostFishResult = await client.query(getMostFishQuery);
-    mostFishResult = mostFishResult.rows;
-    contests.push(createContestFromResults('Most Fish', mostFishResult));
+    contests.push(createContestFromResults('Most Fish', mostFishResult.rows));
 
     let largestWalleyeResult = await client.query(getLargestWalleyeQuery);
-    largestWalleyeResult = largestWalleyeResult.rows;
-    contests.push(createContestFromResults('Largest Walleye', largestWalleyeResult));
+    contests.push(createContestFromResults('Largest Walleye', largestWalleyeResult.rows));
 
     let largestNorthernResult = await client.query(getLargestNorthernQuery);
-    largestNorthernResult = largestNorthernResult.rows;
-    contests.push(createContestFromResults('Largest Northern', largestNorthernResult));
+    contests.push(createContestFromResults('Largest Northern', largestNorthernResult.rows));
 
     let largestBassResult = await client.query(getLargestBassQuery);
-    largestBassResult = largestBassResult.rows;
-    contests.push(createContestFromResults('Largest Bass', largestBassResult));
+    contests.push(createContestFromResults('Largest Bass', largestBassResult.rows));
 
     let largestPerchResult = await client.query(getLargestPerchQuery);
-    largestPerchResult = largestPerchResult.rows;
-    contests.push(createContestFromResults('Largest Perch', largestPerchResult));
+    contests.push(createContestFromResults('Largest Perch', largestPerchResult.rows));
 
     let largestCrappieResult = await client.query(getLargestCrappieQuery);
-    largestCrappieResult = largestCrappieResult.rows;
-    contests.push(createContestFromResults('Largest Crappie', largestCrappieResult));
+    contests.push(createContestFromResults('Largest Crappie', largestCrappieResult.rows));
 
     let largestMuskyResult = await client.query(getLargestMuskyQuery);
-    largestMuskyResult = largestMuskyResult.rows;
-    contests.push(createContestFromResults('Largest Musky', largestMuskyResult));
+    contests.push(createContestFromResults('Largest Musky', largestMuskyResult.rows));
 
     let mostFishInOneDayResult = await client.query(getmostFishInOneDayQuery);
-    mostFishInOneDayResult = mostFishInOneDayResult.rows;
-    contests.push(createContestFromResults('Most Fish in One Day', mostFishInOneDayResult));
+    contests.push(createContestFromResults('Most Fish in One Day', mostFishInOneDayResult.rows));
 
     contests.unshift(createTournamentFromContests(contests));
 
