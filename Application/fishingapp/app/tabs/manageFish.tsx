@@ -4,12 +4,10 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { apiService } from '../../services/apiService';
 
-// Common fish species for dropdown
 const FISH_SPECIES = ['Bass', 'Perch', 'Northern', 'Walleye', 'Crappie', 'Musky', 'Other'];
 
 const CONTESTANTS = ['Jack', 'Bob', 'Mark', 'Brent', 'Glen'];
 
-// Available action types
 const ACTION_TYPES = ['Add', 'Remove'];
 
 export default function ManageFishScreen() {

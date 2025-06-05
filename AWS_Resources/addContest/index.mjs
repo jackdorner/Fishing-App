@@ -49,7 +49,7 @@ export const handler = async (event) => {
       console.log(`✅ message sent to SQS:`, result.MessageId);
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Fish removed" }),
+        body: JSON.stringify({ message: "Fish added" }),
       };
     } catch (err) {
       console.error("🔥 Error sending to SQS:", err);
