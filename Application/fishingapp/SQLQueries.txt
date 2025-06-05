@@ -1,0 +1,72 @@
+select * from fish_species
+select * from contests
+select * from places
+select * from fish
+select * from contestants
+select id from contestants where contestant_name ilike 'Jack'
+
+-- get list of contests with results
+select contests.contest_date, contests.contest_name,  contestants.contestant_name, places.place
+  from contests 
+    left join places on contests.id = places.contest_id
+	left join contestants on places.name_id = contestants.id
+  order by contest_name, place
+
+-- get list of fish
+select fish_species.species, fish.length_in, fish.catch_date, contestants.contestant_name
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  order by contestant_name, catch_date, species, length_in desc
+
+-- get listing of walleye counts
+select contestants.contestant_name, count(fish.length_in) as walleye_count
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  where fish_species.species ilike 'walleye'
+  group by contestant_name
+  order by walleye_count
+
+-- get listing of walleye over 20 inches counts
+select contestants.contestant_name, count(fish.length_in) as walleye_count
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  where fish_species.species ilike 'walleye'
+  	and fish.length_in >= 20
+  group by contestant_name
+  order by walleye_count
+
+-- get list of largest walleye per contestant
+select contestants.contestant_name, max(fish.length_in) as biggest_walleye
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  where fish_species.species ilike 'walleye'
+  group by contestant_name
+  order by biggest_walleye desc
+
+-- get list of largest northern per contestant
+select contestants.contestant_name, max(fish.length_in) as biggest_northern
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  where fish_species.species ilike 'northern'
+  group by contestant_name
+  order by biggest_northern desc
+
+-- get list of all fish counts
+select contestants.contestant_name, count(fish.length_in) as fish_count
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  group by contestant_name
+  order by fish_count desc
+
+-- most fish in one day
+select contestants.contestant_name, fish.catch_date, count(fish.species_id) as fish_count
+  from fish 
+  	left join fish_species on fish.species_id = fish_species.id
+	left join contestants on fish.name_id = contestants.id
+  order by contestant_name, catch_date, species, length_in desc

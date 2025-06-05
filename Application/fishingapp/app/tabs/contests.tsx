@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { apiService, Contest, ContestPlace } from '../../services/apiService';
+import { apiService, AddContest, RemoveContest } from '../../services/apiService';
 
 const ACTION_TYPES = ['Add', 'Remove'];
 const CONTESTANTS = ['Jack', 'Bob', 'Mark', 'Brent', 'Glen'];
+
+export interface ContestPlace {
+  place: number;
+  name: string;
+}
 
 export default function ContestsScreen() {
   const [actionType, setActionType] = useState('Add');
@@ -35,10 +40,24 @@ export default function ContestsScreen() {
         setErrorMessage('Please enter a valid contest date');
         return false;
       }
-      
-      // At least the first place needs a name
       if (!places[0].name.trim()) {
-        setErrorMessage('Please enter a name for the 1st place');
+        setErrorMessage('Please select a name for the 1st place');
+        return false;
+      }
+      if (!places[1].name.trim()) {
+        setErrorMessage('Please select a name for the 2nd place');
+        return false;
+      }
+      if (!places[2].name.trim()) {
+        setErrorMessage('Please select a name for the 3rd place');
+        return false;
+      }
+      if (!places[3].name.trim()) {
+        setErrorMessage('Please select a name for the 4th place');
+        return false;
+      }
+      if (!places[4].name.trim()) {
+        setErrorMessage('Please select a name for the 5th place');
         return false;
       }
     } else {
@@ -52,25 +71,20 @@ export default function ContestsScreen() {
     return true;
   };
 
-  const handleUpdatePlace = (index: number, name: string) => {
-    const updatedPlaces = [...places];
-    updatedPlaces[index] = { ...updatedPlaces[index], name };
-    setPlaces(updatedPlaces);
-  };
-
   const handleAddContest = async () => {
     if (!validateInputs()) return;
 
     setSubmitting(true);
 
     try {
-      // Filter out places with empty names
-      const validPlaces = places.filter(place => place.name.trim() !== '');
-      
-      const contestData: Contest = {
-        name: contestName.trim(),
-        date: contestDate,
-        places: validPlaces
+      const contestData = {
+        contest_name: contestName.trim(),
+        contest_date: contestDate,
+        place1: places[0].name,
+        place2: places[1].name,
+        place3: places[2].name,
+        place4: places[3].name,
+        place5: places[4].name
       };
 
       await apiService.addContest(contestData);
@@ -108,8 +122,11 @@ export default function ContestsScreen() {
     setSubmitting(true);
 
     try {
+      const contestData = {
+        contest_name: contestName.trim()
+      };
 
-      await apiService.deleteContest(contestName);
+      await apiService.deleteContest(contestData);
       
       Alert.alert(
         'Success',
