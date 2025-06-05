@@ -191,30 +191,36 @@ export const apiService = {
   },
 
   // getFish
-  getFish: async (): Promise<any> => {
-    try {
-      const { apiLink, apiKey } = await apiService.getApiConfig();
-
-      if (!apiLink || !apiKey) {
-        throw new Error('API configuration not set. Please configure in Settings.');
-      }
-
-      const response = await fetch(`${apiLink}/get-fish`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey
+  getFish: async (): Promise<FishEntry[]> => {
+    const { apiLink, apiKey } = await apiService.getApiConfig();
+  
+    const response = await fetch(`${apiLink}/get-fish`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+    });
+  
+    const result = await response.json();
+  
+    if (response.ok && result.body) {
+      try {
+        const parsed = JSON.parse(result.body);
+  
+        if (Array.isArray(parsed)) {
+          return parsed.map((fish): FishEntry => ({
+            name: fish.contestant_name, // Map to match FishEntry
+            species: fish.species,
+            length_in: fish.length_in,
+            catch_date: fish.catch_date,
+          }));
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      } catch (e) {
+        console.error('Failed to parse fish response body:', e);
       }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to add contest:', error);
-      throw error;
     }
+  
+    throw new Error('Invalid response format from getFish');
   },
 };

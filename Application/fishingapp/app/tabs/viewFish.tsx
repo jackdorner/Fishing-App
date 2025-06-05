@@ -252,14 +252,14 @@ const styles = StyleSheet.create({
   },
   speciesCell: {
     flex: 2,
-    marginRight: 5,
+    marginRight: 3,
   },
   lengthCell: {
-    flex: 1,
-    marginRight: 5,
+    flex: 2,
+    marginRight: 7,
     textAlign: 'center',
   },
   dateCell: {
-    flex: 2,
+    flex: 2.5,
   }
 });
