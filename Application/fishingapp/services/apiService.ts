@@ -183,7 +183,8 @@ export const apiService = {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data.contests;
     } catch (error) {
       console.error('Failed to add contest:', error);
       throw error;
