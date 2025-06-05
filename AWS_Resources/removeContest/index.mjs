@@ -9,15 +9,9 @@ const QUEUE_URL = process.env.QUEUE_URL;
 
 const contestSchema = {
   type: "object",
-  required: ["contest_name", "contest_date", "place1", "place2", "place3", "place4", "place5"],
+  required: ["contest_name"],
   properties: {
-    contest_name: { type: "string" },
-    contest_date: { type: "string", format: "date" },
-    place1: { type: "string" },
-    place2: { type: "string" },
-    place3: { type: "string" },
-    place4: { type: "string" },
-    place5: { type: "string" }
+    contest_name: { type: "string" }
   },
   additionalProperties: false
 };
@@ -52,7 +46,7 @@ export const handler = async (event) => {
       console.log(`✅ message sent to SQS:`, result.MessageId);
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Contest added" }),
+        body: JSON.stringify({ message: "Contest removed" }),
       };
     } catch (err) {
       console.error("🔥 Error sending to SQS:", err);

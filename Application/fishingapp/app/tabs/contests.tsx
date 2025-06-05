@@ -4,43 +4,26 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { apiService, Contest, ContestPlace } from '../../services/apiService';
 
-// Available action types
 const ACTION_TYPES = ['Add', 'Remove'];
+const CONTESTANTS = ['Jack', 'Bob', 'Mark', 'Brent', 'Glen'];
 
 export default function ContestsScreen() {
   const [actionType, setActionType] = useState('Add');
   const [showActionTypes, setShowActionTypes] = useState(false);
   const [contestName, setContestName] = useState('');
   const [contestDate, setContestDate] = useState(new Date().toISOString().split('T')[0]);
-  const [places, setPlaces] = useState<ContestPlace[]>([
-    { place: 1, name: '' },
-    { place: 2, name: '' },
-    { place: 3, name: '' }
-  ]);
-  const [contests, setContests] = useState<Contest[]>([]);
-  const [selectedContestId, setSelectedContestId] = useState<number | null>(null);
+  const [places, setPlaces] = useState<ContestPlace[]>(
+    [
+      { place: 1, name: '' },
+      { place: 2, name: '' },
+      { place: 3, name: '' },
+      { place: 4, name: '' },
+      { place: 5, name: '' }
+    ]
+  );
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showContestsList, setShowContestsList] = useState(false);
-
-  // Load contests when component mounts
-  useEffect(() => {
-    loadContests();
-  }, []);
-
-  const loadContests = async () => {
-    try {
-      setLoading(true);
-      const contestsData = await apiService.getAllContests();
-      setContests(contestsData);
-      setErrorMessage(null);
-    } catch (error: any) {
-      setErrorMessage(error.message || 'Failed to load contests');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showContestantDropdowns, setShowContestantDropdowns] = useState<{[key: number]: boolean}>({});
 
   const validateInputs = () => {
     if (actionType === 'Add') {
@@ -99,15 +82,15 @@ export default function ContestsScreen() {
           { 
             text: 'Dismiss', 
             onPress: () => {
-              // Reset form and reload contests
               setContestName('');
               setContestDate(new Date().toISOString().split('T')[0]);
               setPlaces([
                 { place: 1, name: '' },
                 { place: 2, name: '' },
-                { place: 3, name: '' }
+                { place: 3, name: '' },
+                { place: 4, name: '' },
+                { place: 5, name: '' }
               ]);
-              loadContests();
             }
           }
         ]
@@ -135,9 +118,7 @@ export default function ContestsScreen() {
           { 
             text: 'Dismiss', 
             onPress: () => {
-              // Reset form and reload contests
               setContestName('');
-              loadContests();
             }
           }
         ]
@@ -157,9 +138,18 @@ export default function ContestsScreen() {
     }
   };
 
-  const selectContest = (contest: Contest) => {
-    setSelectedContestId(contest.id || null);
-    setShowContestsList(false);
+  const toggleContestantDropdown = (placeIndex: number) => {
+    setShowContestantDropdowns(prev => ({
+      ...prev,
+      [placeIndex]: !prev[placeIndex]
+    }));
+  };
+
+  const selectContestant = (placeIndex: number, contestantName: string) => {
+    const updatedPlaces = [...places];
+    updatedPlaces[placeIndex] = { ...updatedPlaces[placeIndex], name: contestantName };
+    setPlaces(updatedPlaces);
+    toggleContestantDropdown(placeIndex);
   };
 
   return (
@@ -168,13 +158,6 @@ export default function ContestsScreen() {
         <Text style={styles.headerText}>Manage Contests</Text>
         <MaterialCommunityIcons name="trophy" size={30} color="#ffd33d" />
       </View>
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffd33d" />
-          <Text style={styles.loadingText}>Loading contests...</Text>
-        </View>
-      )}
 
       {errorMessage && (
         <View style={styles.errorContainer}>
@@ -235,13 +218,31 @@ export default function ContestsScreen() {
             {places.map((place, index) => (
               <View key={index} style={styles.placeContainer}>
                 <Text style={styles.placeNumber}>{place.place}.</Text>
-                <TextInput
-                  style={styles.placeInput}
-                  placeholder={`Enter name for ${place.place}${place.place === 1 ? 'st' : place.place === 2 ? 'nd' : 'rd'} place`}
-                  placeholderTextColor="#aaa"
-                  value={place.name}
-                  onChangeText={(text) => handleUpdatePlace(index, text)}
-                />
+                <View style={styles.placeInputContainer}>
+                  <TouchableOpacity 
+                    style={styles.placeInput} 
+                    onPress={() => toggleContestantDropdown(index)}
+                  >
+                    <Text style={place.name ? styles.inputText : styles.placeholderText}>
+                      {place.name || `Select name for ${place.place}${place.place === 1 ? 'st' : place.place === 2 ? 'nd' : place.place === 3 ? 'rd' : 'th'} place`}
+                    </Text>
+                    <Ionicons name={showContestantDropdowns[index] ? "chevron-up" : "chevron-down"} size={20} color="#aaa" />
+                  </TouchableOpacity>
+                  
+                  {showContestantDropdowns[index] && (
+                    <View style={styles.contestantDropdown}>
+                      {CONTESTANTS.map((contestant) => (
+                        <TouchableOpacity 
+                          key={contestant} 
+                          style={styles.dropdownItem} 
+                          onPress={() => selectContestant(index, contestant)}
+                        >
+                          <Text style={styles.dropdownText}>{contestant}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
             ))}
           </>
@@ -270,30 +271,6 @@ export default function ContestsScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      {!loading && contests.length > 0 && (
-        <View style={styles.contestsListContainer}>
-          <Text style={styles.contestsListTitle}>Current Contests</Text>
-          {contests.map((contest) => (
-            <View key={contest.id} style={styles.contestItem}>
-              <View style={styles.contestHeader}>
-                <Text style={styles.contestName}>{contest.name}</Text>
-                <Text style={styles.contestDate}>{contest.date}</Text>
-              </View>
-              {contest.places && contest.places.length > 0 && (
-                <View style={styles.placesContainer}>
-                  {contest.places.map((place, index) => (
-                    <View key={index} style={styles.placeRow}>
-                      <Text style={styles.placeNumber}>{place.place}.</Text>
-                      <Text style={styles.placeName}>{place.name}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -305,7 +282,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
+    paddingTop: 70,
   },
   header: {
     flexDirection: 'row',
@@ -317,14 +295,6 @@ const styles = StyleSheet.create({
     color: '#ffd33d',
     fontSize: 24,
     fontWeight: 'bold',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    color: '#ffd33d',
-    marginTop: 10,
   },
   card: {
     backgroundColor: '#333',
@@ -368,7 +338,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: -16,
     marginBottom: 16,
-    maxHeight: 200,
+    maxHeight: 300,
   },
   dropdownItem: {
     padding: 12,
@@ -396,12 +366,39 @@ const styles = StyleSheet.create({
     marginRight: 10,
     width: 20,
   },
+  placeInputContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   placeInput: {
     flex: 1,
     backgroundColor: '#444',
     borderRadius: 5,
     padding: 12,
     color: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  contestantDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#444',
+    borderRadius: 5,
+    marginTop: 2,
+    zIndex: 10,
+    elevation: 10,
+    maxHeight: 300,
+  },
+  customEntryItem: {
+    borderTopWidth: 1,
+    borderTopColor: '#555',
+  },
+  customEntryText: {
+    color: '#ffd33d',
+    fontStyle: 'italic',
   },
   placeName: {
     color: '#fff',
