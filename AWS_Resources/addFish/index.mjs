@@ -26,10 +26,10 @@ export const handler = async (event) => {
 
   let body;
   try {
-    if (typeof event.body === "string") {
-      body = JSON.parse(event.body);
+    if (event.body) {
+      body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
     } else {
-      body = event.body;
+      body = event;
     }
   } catch (err) {
     console.error("Invalid JSON: ", err);

@@ -4,10 +4,9 @@ const API_LINK_KEY = 'api_link';
 const API_KEY_KEY = 'api_key';
 
 export interface FishEntry {
-  id?: number;
-  caught_by: string;
+  name: string;
   species: string;
-  length_inches: number;
+  length_in: number;
   catch_date: string;
 }
 

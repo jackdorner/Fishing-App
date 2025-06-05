@@ -5,10 +5,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { apiService } from '../../services/apiService';
 
 // Common fish species for dropdown
-const FISH_SPECIES = [
-  'Bass', 'Trout', 'Perch', 'Pike', 'Walleye',
-  'Catfish', 'Sunfish', 'Crappie', 'Bluegill', 'Other'
-];
+const FISH_SPECIES = ['Bass', 'Perch', 'Northern', 'Walleye', 'Crappie', 'Musky', 'Other'];
+
+const CONTESTANTS = ['Jack', 'Bob', 'Mark', 'Brent', 'Glen'];
 
 // Available action types
 const ACTION_TYPES = ['Add', 'Remove'];
@@ -17,7 +16,8 @@ export default function ManageFishScreen() {
   const [actionType, setActionType] = useState('Add');
   const [showActionTypes, setShowActionTypes] = useState(false);
   const [species, setSpecies] = useState('');
-  const [caughtBy, setCaughtBy] = useState('');
+  const [angular, setAngular] = useState('');
+  const [showContestantsList, setShowContestantsList] = useState(false);
   const [length, setLength] = useState('');
   const [catchDate, setCatchDate] = useState(new Date().toISOString().split('T')[0]);
   const [showSpeciesList, setShowSpeciesList] = useState(false);
@@ -29,8 +29,8 @@ export default function ManageFishScreen() {
       setErrorMessage('Please select or enter fish species');
       return false;
     }
-    if (!caughtBy.trim()) {
-      setErrorMessage('Please enter your name');
+    if (!angular.trim()) {
+      setErrorMessage('Please select angular');
       return false;
     }
     if (!length.trim() || isNaN(parseFloat(length)) || parseFloat(length) <= 0) {
@@ -53,8 +53,8 @@ export default function ManageFishScreen() {
     try {
       const fishData = {
         species: species.trim(),
-        caught_by: caughtBy.trim(),
-        length_inches: parseFloat(length),
+        name: angular.trim(),
+        length_in: parseFloat(length),
         catch_date: catchDate
       };
 
@@ -62,7 +62,7 @@ export default function ManageFishScreen() {
       
       Alert.alert(
         'Success',
-        'Fish catch removed successfully!',
+        'Fish removed successfully!',
         [
           { 
             text: 'Dismiss', 
@@ -71,7 +71,7 @@ export default function ManageFishScreen() {
         ]
       );
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to remove fish catch');
+      Alert.alert('Error', error.message || 'Failed to remove fish');
     } finally {
       setSubmitting(false);
     }
@@ -93,8 +93,8 @@ export default function ManageFishScreen() {
     try {
       const fishData = {
         species: species.trim(),
-        caught_by: caughtBy.trim(),
-        length_inches: parseFloat(length),
+        name: angular.trim(),
+        length_in: parseFloat(length),
         catch_date: catchDate
       };
 
@@ -120,6 +120,11 @@ export default function ManageFishScreen() {
   const selectSpecies = (selected: string) => {
     setSpecies(selected);
     setShowSpeciesList(false);
+  };
+
+  const selectAngular = (selected: string) => {
+    setAngular(selected);
+    setShowContestantsList(false);
   };
 
   return (
@@ -186,27 +191,33 @@ export default function ManageFishScreen() {
                 <Text style={styles.dropdownText}>{item}</Text>
               </TouchableOpacity>
             ))}
-            <View style={styles.customSpeciesContainer}>
-              <TextInput
-                style={styles.customSpeciesInput}
-                placeholder="Or enter custom species"
-                placeholderTextColor="#aaa"
-                value={species}
-                onChangeText={setSpecies}
-                onSubmitEditing={() => setShowSpeciesList(false)}
-              />
-            </View>
           </View>
         )}
 
-        <Text style={styles.label}>Caught By</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your name"
-          placeholderTextColor="#aaa"
-          value={caughtBy}
-          onChangeText={setCaughtBy}
-        />
+<Text style={styles.label}>Angular</Text>
+        <TouchableOpacity 
+          style={styles.input} 
+          onPress={() => setShowContestantsList(!showContestantsList)}
+        >
+          <Text style={angular ? styles.inputText : styles.placeholderText}>
+            {angular || 'Select or enter angular'}
+          </Text>
+          <Ionicons name={showContestantsList ? "chevron-up" : "chevron-down"} size={20} color="#aaa" />
+        </TouchableOpacity>
+
+        {showContestantsList && (
+          <View style={styles.dropdown}>
+            {CONTESTANTS.map((item) => (
+              <TouchableOpacity 
+                key={item} 
+                style={styles.dropdownItem} 
+                onPress={() => selectAngular(item)}
+              >
+                <Text style={styles.dropdownText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.label}>Length (inches)</Text>
         <TextInput
@@ -304,7 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: -16,
     marginBottom: 16,
-    maxHeight: 200,
+    maxHeight: 350,
   },
   dropdownItem: {
     padding: 12,
