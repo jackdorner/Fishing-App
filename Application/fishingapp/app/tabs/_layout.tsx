@@ -26,6 +26,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="contests"
+        options={{
+            title: 'Contests',
+            tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+                name={focused ? 'trophy' : 'trophy-outline'}
+                color={color}
+                size={24}
+            />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
@@ -48,12 +61,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="contests"
+        name="viewFish"
         options={{
-            title: 'Contests',
+            title: 'View Fish',
             tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-                name={focused ? 'trophy' : 'trophy-outline'}
+                name={focused ? 'fish' : 'fish'}
                 color={color}
                 size={24}
             />

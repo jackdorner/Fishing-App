@@ -162,4 +162,59 @@ export const apiService = {
       throw error;
     }
   },
+  //Get all contests
+  getContests: async (): Promise<any> => {
+    try {
+      const { apiLink, apiKey } = await apiService.getApiConfig();
+
+      if (!apiLink || !apiKey) {
+        throw new Error('API configuration not set. Please configure in Settings.');
+      }
+
+      const response = await fetch(`${apiLink}/get-contests`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to add contest:', error);
+      throw error;
+    }
+  },
+
+  // getFish
+  getFish: async (): Promise<any> => {
+    try {
+      const { apiLink, apiKey } = await apiService.getApiConfig();
+
+      if (!apiLink || !apiKey) {
+        throw new Error('API configuration not set. Please configure in Settings.');
+      }
+
+      const response = await fetch(`${apiLink}/get-fish`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to add contest:', error);
+      throw error;
+    }
+  },
 };
