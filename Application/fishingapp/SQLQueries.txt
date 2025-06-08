@@ -20,7 +20,7 @@ select fish_species.species, fish.length_in, fish.catch_date, contestants.contes
   order by contestant_name, catch_date, species, length_in desc
 
 -- get listing of walleye counts
-select contestants.contestant_name, count(fish.length_in) as walleye_count
+select contestants.contestant_name, count(fish.length_in) as value
   from fish 
   	left join fish_species on fish.species_id = fish_species.id
 	left join contestants on fish.name_id = contestants.id
@@ -29,7 +29,7 @@ select contestants.contestant_name, count(fish.length_in) as walleye_count
   order by walleye_count
 
 -- get listing of walleye over 20 inches counts
-select contestants.contestant_name, count(fish.length_in) as walleye_count
+select contestants.contestant_name, count(fish.length_in) as value
   from fish 
   	left join fish_species on fish.species_id = fish_species.id
 	left join contestants on fish.name_id = contestants.id
@@ -39,7 +39,7 @@ select contestants.contestant_name, count(fish.length_in) as walleye_count
   order by walleye_count
 
 -- get list of largest walleye per contestant
-select contestants.contestant_name, max(fish.length_in) as biggest_walleye
+select contestants.contestant_name, max(fish.length_in) as value
   from fish 
   	left join fish_species on fish.species_id = fish_species.id
 	left join contestants on fish.name_id = contestants.id
@@ -48,7 +48,7 @@ select contestants.contestant_name, max(fish.length_in) as biggest_walleye
   order by biggest_walleye desc
 
 -- get list of largest northern per contestant
-select contestants.contestant_name, max(fish.length_in) as biggest_northern
+select contestants.contestant_name, max(fish.length_in) as value
   from fish 
   	left join fish_species on fish.species_id = fish_species.id
 	left join contestants on fish.name_id = contestants.id
@@ -57,7 +57,7 @@ select contestants.contestant_name, max(fish.length_in) as biggest_northern
   order by biggest_northern desc
 
 -- get list of all fish counts
-select contestants.contestant_name, count(fish.length_in) as fish_count
+select contestants.contestant_name, count(fish.length_in) as value
   from fish 
   	left join fish_species on fish.species_id = fish_species.id
 	left join contestants on fish.name_id = contestants.id
@@ -65,8 +65,8 @@ select contestants.contestant_name, count(fish.length_in) as fish_count
   order by fish_count desc
 
 -- most fish in one day
-select contestants.contestant_name, fish.catch_date, count(fish.species_id) as fish_count
+select contestants.contestant_name, fish.catch_date, count(fish.species_id) as value
   from fish 
-  	left join fish_species on fish.species_id = fish_species.id
+  	left join fish_species on fish_species.id = fish.species.id
 	left join contestants on fish.name_id = contestants.id
-  order by contestant_name, catch_date, species, length_in desc
+  order by contestant_name, catch_date, species, value desc
