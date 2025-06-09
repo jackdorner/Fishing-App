@@ -43,30 +43,64 @@ function createContestsFromRows(rows) {
     // Filter rows for this specific contest
     const contestRows = rows.filter(row => row.contest_name === contestName);
 
-    // Initialize place objects
-    let first = null, second = null, third = null, fourth = null, fifth = null;
-
-    // Assign contestants to places based on the 'place' field in rows
+    // Group contestants by place
+    const placeMap = new Map();
     for (const row of contestRows) {
-      const placeObj = new Place(row.contestant_name, row.place, row.place);
-
-      switch (row.place) {
-        case 1:
-          first = placeObj;
-          break;
-        case 2:
-          second = placeObj;
-          break;
-        case 3:
-          third = placeObj;
-          break;
-        case 4:
-          fourth = placeObj;
-          break;
-        case 5:
-          fifth = placeObj;
-          break;
+      if (!placeMap.has(row.place)) {
+        placeMap.set(row.place, []);
       }
+      placeMap.get(row.place).push({
+        name: row.contestant_name,
+        place: row.place,
+        value: row.place
+      });
+    }
+
+    // Sort each place group by name for consistent ordering of ties
+    for (const contestants of placeMap.values()) {
+      contestants.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Sort places in ascending order (1st, 2nd, 3rd, etc.)
+    const sortedPlaces = Array.from(placeMap.keys()).sort((a, b) => a - b);
+    
+    // Prepare the five positions
+    let first = null, second = null, third = null, fourth = null, fifth = null;
+    
+    // Track which position to fill next
+    let positionIndex = 0;
+    
+    // Fill positions based on place order
+    for (const place of sortedPlaces) {
+      const contestants = placeMap.get(place);
+      
+      for (const contestant of contestants) {
+        const placeObj = new Place(contestant.name, contestant.place, contestant.value);
+        
+        // Assign to the next available position
+        if (positionIndex === 0 && !first) {
+          first = placeObj;
+          positionIndex++;
+        } else if (positionIndex === 1 && !second) {
+          second = placeObj;
+          positionIndex++;
+        } else if (positionIndex === 2 && !third) {
+          third = placeObj;
+          positionIndex++;
+        } else if (positionIndex === 3 && !fourth) {
+          fourth = placeObj;
+          positionIndex++;
+        } else if (positionIndex === 4 && !fifth) {
+          fifth = placeObj;
+          positionIndex++;
+        }
+        
+        // Stop if we've filled all five positions
+        if (positionIndex >= 5) break;
+      }
+      
+      // Stop if we've filled all five positions
+      if (positionIndex >= 5) break;
     }
 
     // Check for missing positions and add empty places
@@ -83,7 +117,6 @@ function createContestsFromRows(rows) {
 
   return contests;
 }
-
 /**
  * Creates a Contest object from query results for a specific contest
  * @param {string} contestName - The name of the contest to extract
@@ -131,73 +164,51 @@ function createContestFromResults(contestName, results) {
     currentPlace += contestants.length; // Skip places for ties
   });
 
-  // Initialize place objects as null
-  let first = null, second = null, third = null, fourth = null, fifth = null;
-
   // Sort placeAssignments by place, then by name for predictable assignment
   placeAssignments.sort((a, b) => a.place - b.place || a.name.localeCompare(b.name));
 
-  // Create place objects for each contestant based on their assigned place
+  // Create a more direct position assignment array
+  const positions = [null, null, null, null, null]; // [first, second, third, fourth, fifth]
+  
+  // First pass: assign contestants to positions based on natural order
+  // This ensures we fill from 1st to 5th, handling ties properly
+  let posIndex = 0;
   for (const assignment of placeAssignments) {
-    const placeObj = new Place(assignment.name, assignment.place, assignment.value);
-
-    // Assign to appropriate place based on order AND place number
-    if (assignment.place === 1) {
-      first = placeObj;
-    } else if (assignment.place === 2) {
-      if (!second) {
-        second = placeObj;
-      } else if (!third && third !== second) {  // Make sure we don't overwrite existing third place
-        third = placeObj;
-      }
-    } else if (assignment.place === 3) {
-      if (!third) {
-        third = placeObj;
-      }
-    } else if (assignment.place === 4) {
-      fourth = placeObj;
-    } else if (assignment.place === 5) {
-      fifth = placeObj;
+    if (posIndex < 5) {
+      positions[posIndex] = new Place(assignment.name, assignment.place, assignment.value);
+      posIndex++;
     }
   }
-
-  // Check for missing contestants and add them with place based on ties logic
-  if (results.length < 5) {
-    const existingContestants = contestRows.map(row => row.contestant_name);
-    const missingContestants = Contestants.filter(name => !existingContestants.includes(name));
-
-    // Determine the next available place for "no value" contestants
-    const nextPlace = currentPlace;
-
-    // Initialize any empty places
-    if (!first) first = new Place('', 1, 0);
-    if (!second) second = new Place('', 2, 0);
-    if (!third) third = new Place('', 3, 0);
-    if (!fourth) fourth = new Place('', 4, 0);
-    if (!fifth) fifth = new Place('', 5, 0);
-
-    // If we have missing contestants, fill in the empty places with the next available place
-    if (missingContestants.length > 0) {
-      for (const missingName of missingContestants) {
-        const missingContestant = new Place(missingName, nextPlace, 0);
-
-        // Fill in any empty place, starting from the lowest
-        if (first.name === '') {
-          first = missingContestant;
-        } else if (second.name === '') {
-          second = missingContestant;
-        } else if (third.name === '') {
-          third = missingContestant;
-        } else if (fourth.name === '') {
-          fourth = missingContestant;
-        } else if (fifth.name === '') {
-          fifth = missingContestant;
-        }
+  
+  // Fill any remaining empty positions
+  const existingContestants = contestRows.map(row => row.contestant_name);
+  const missingContestants = Contestants.filter(name => !existingContestants.includes(name));
+  
+  // Determine the next available place for "no value" contestants
+  const nextPlace = currentPlace;
+  
+  // Add missing contestants to any null positions
+  let missingIndex = 0;
+  for (let i = 0; i < positions.length; i++) {
+    if (!positions[i]) {
+      if (missingContestants[missingIndex]) {
+        positions[i] = new Place(missingContestants[missingIndex], nextPlace, 0);
+        missingIndex++;
+      } else {
+        positions[i] = new Place('', i+1, 0);
       }
     }
   }
-  // Create and return the Contest object
-  return new Contest(contestName, first, second, third, fourth, fifth);
+  
+  // Create and return the Contest object with properly assigned positions
+  return new Contest(
+    contestName, 
+    positions[0] || new Place('', 1, 0),
+    positions[1] || new Place('', 2, 0),
+    positions[2] || new Place('', 3, 0),
+    positions[3] || new Place('', 4, 0),
+    positions[4] || new Place('', 5, 0)
+  );
 }
 /**
  * Creates a tournament contest by summing places across all contests for each contestant
