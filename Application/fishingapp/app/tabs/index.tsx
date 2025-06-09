@@ -25,6 +25,7 @@ export default function HomeScreen() {
       setLoading(true);
       
       const contestsData = await apiService.getContests();
+      console.log('Fetched contests:', contestsData); // Debugging line
       
       if (contestsData && Array.isArray(contestsData)) {
         setContests(contestsData);
@@ -50,6 +51,8 @@ export default function HomeScreen() {
   };
 
   const renderPlaceItem = (placeObj: { name: string; place: number; value: number }) => {
+    if (!placeObj) return null;
+    
     const place = placeObj.place;
     const name = placeObj.name;
     const value = placeObj.value;
@@ -59,7 +62,7 @@ export default function HomeScreen() {
                       place === 3 ? '3rd' : `${place}th`;
     
     return (
-      <View style={styles.placeRow} key={place}>
+      <View style={styles.placeRow} key={`${name}-${place}-${value}`}>
         <Text style={styles.placeNumber}>{placeText}</Text>
         <Text style={styles.placeName}>{name}</Text>
         <Text style={styles.placeValue}>{value}</Text>

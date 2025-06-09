@@ -184,7 +184,8 @@ export const apiService = {
       }
 
       const data = await response.json();
-      return data.contests;
+      const parsedBody = JSON.parse(data.body);
+      return parsedBody.contests;
     } catch (error) {
       console.error('Failed to add contest:', error);
       throw error;
