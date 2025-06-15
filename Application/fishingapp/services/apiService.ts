@@ -13,11 +13,7 @@ export interface FishEntry {
 export interface AddContest {
   contest_name: string;
   contest_date: string;
-  place1: string;
-  place2: string;
-  place3: string;
-  place4: string;
-  place5: string;
+  [key: string]: string | string[]; // Allow for dynamic place keys (place1, place2, etc.)
 }
 
 export interface RemoveContest {
@@ -110,15 +106,7 @@ export const apiService = {
           'Content-Type': 'application/json',
           'x-api-key': apiKey
         },
-        body: JSON.stringify({
-          contest_name: contestData.contest_name,
-          contest_date: contestData.contest_date,
-          place1: contestData.place1,
-          place2: contestData.place2,
-          place3: contestData.place3,
-          place4: contestData.place4,
-          place5: contestData.place5
-        })
+        body: JSON.stringify(contestData) // Pass the entire contestData object
       });
 
       if (!response.ok) {

@@ -9,15 +9,40 @@ const QUEUE_URL = process.env.QUEUE_URL;
 
 const contestSchema = {
   type: "object",
-  required: ["contest_name", "contest_date", "place1", "place2", "place3", "place4", "place5"],
+  required: ["contest_name", "contest_date"],
   properties: {
     contest_name: { type: "string" },
     contest_date: { type: "string", format: "date" },
-    place1: { type: "string" },
-    place2: { type: "string" },
-    place3: { type: "string" },
-    place4: { type: "string" },
-    place5: { type: "string" }
+    place1: { 
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } }
+      ]
+    },
+    place2: { 
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } }
+      ]
+    },
+    place3: { 
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } }
+      ]
+    },
+    place4: { 
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } }
+      ]
+    },
+    place5: { 
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } }
+      ]
+    }
   },
   additionalProperties: false
 };

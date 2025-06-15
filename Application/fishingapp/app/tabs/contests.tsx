@@ -6,6 +6,7 @@ import { apiService, AddContest, RemoveContest } from '../../services/apiService
 
 const ACTION_TYPES = ['Add', 'Remove'];
 const CONTESTANTS = ['Jack', 'Bob', 'Mark', 'Brent', 'Glen'];
+const PLACES = [1, 2, 3, 4, 5];
 
 export interface ContestPlace {
   place: number;
@@ -17,18 +18,13 @@ export default function ContestsScreen() {
   const [showActionTypes, setShowActionTypes] = useState(false);
   const [contestName, setContestName] = useState('');
   const [contestDate, setContestDate] = useState(new Date().toISOString().split('T')[0]);
-  const [places, setPlaces] = useState<ContestPlace[]>(
-    [
-      { place: 1, name: '' },
-      { place: 2, name: '' },
-      { place: 3, name: '' },
-      { place: 4, name: '' },
-      { place: 5, name: '' }
-    ]
+  const [contestants, setContestants] = useState<{name: string, place: number}[]>(
+    CONTESTANTS.map(name => ({ name, place: 0 }))
   );
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showContestantDropdowns, setShowContestantDropdowns] = useState<{[key: number]: boolean}>({});
+  const [showContestantDropdowns, setShowContestantDropdowns] = useState<{[key: string]: boolean}>({});
+  const [showPlaceDropdowns, setShowPlaceDropdowns] = useState<{[key: string]: boolean}>({});
 
   const validateInputs = () => {
     if (actionType === 'Add') {
@@ -40,24 +36,11 @@ export default function ContestsScreen() {
         setErrorMessage('Please enter a valid contest date');
         return false;
       }
-      if (!places[0].name.trim()) {
-        setErrorMessage('Please select a name for the 1st place');
-        return false;
-      }
-      if (!places[1].name.trim()) {
-        setErrorMessage('Please select a name for the 2nd place');
-        return false;
-      }
-      if (!places[2].name.trim()) {
-        setErrorMessage('Please select a name for the 3rd place');
-        return false;
-      }
-      if (!places[3].name.trim()) {
-        setErrorMessage('Please select a name for the 4th place');
-        return false;
-      }
-      if (!places[4].name.trim()) {
-        setErrorMessage('Please select a name for the 5th place');
+      
+      // Check if at least one contestant has a place assigned
+      const hasPlacedContestants = contestants.some(c => c.place > 0);
+      if (!hasPlacedContestants) {
+        setErrorMessage('Please assign at least one place');
         return false;
       }
     } else {
@@ -77,14 +60,30 @@ export default function ContestsScreen() {
     setSubmitting(true);
 
     try {
+      // Create a map of places to names for API compatibility
+      const placeMap: {[key: string]: string | string[]} = {};
+      
+      // Group contestants by place
+      for (let i = 1; i <= 5; i++) {
+        const contestantsWithPlace = contestants.filter(c => c.place === i);
+        
+        if (contestantsWithPlace.length > 0) {
+          const placeKey = `place${i}`;
+          
+          if (contestantsWithPlace.length === 1) {
+            // Single contestant for this place
+            placeMap[placeKey] = contestantsWithPlace[0].name;
+          } else {
+            // Multiple contestants (tie) for this place
+            placeMap[placeKey] = contestantsWithPlace.map(c => c.name);
+          }
+        }
+      }
+
       const contestData = {
         contest_name: contestName.trim(),
         contest_date: contestDate,
-        place1: places[0].name,
-        place2: places[1].name,
-        place3: places[2].name,
-        place4: places[3].name,
-        place5: places[4].name
+        ...placeMap
       };
 
       await apiService.addContest(contestData);
@@ -98,13 +97,7 @@ export default function ContestsScreen() {
             onPress: () => {
               setContestName('');
               setContestDate(new Date().toISOString().split('T')[0]);
-              setPlaces([
-                { place: 1, name: '' },
-                { place: 2, name: '' },
-                { place: 3, name: '' },
-                { place: 4, name: '' },
-                { place: 5, name: '' }
-              ]);
+              setContestants(CONTESTANTS.map(name => ({ name, place: 0 })));
             }
           }
         ]
@@ -155,18 +148,35 @@ export default function ContestsScreen() {
     }
   };
 
-  const toggleContestantDropdown = (placeIndex: number) => {
-    setShowContestantDropdowns(prev => ({
+  const togglePlaceDropdown = (contestantName: string) => {
+    setShowPlaceDropdowns(prev => ({
       ...prev,
-      [placeIndex]: !prev[placeIndex]
+      [contestantName]: !prev[contestantName]
     }));
+    
+    // Close any other dropdowns
+    Object.keys(showPlaceDropdowns).forEach(key => {
+      if (key !== contestantName && showPlaceDropdowns[key]) {
+        setShowPlaceDropdowns(prev => ({ ...prev, [key]: false }));
+      }
+    });
   };
 
-  const selectContestant = (placeIndex: number, contestantName: string) => {
-    const updatedPlaces = [...places];
-    updatedPlaces[placeIndex] = { ...updatedPlaces[placeIndex], name: contestantName };
-    setPlaces(updatedPlaces);
-    toggleContestantDropdown(placeIndex);
+  const selectPlace = (contestantName: string, place: number) => {
+    setContestants(prev => 
+      prev.map(c => 
+        c.name === contestantName ? { ...c, place } : c
+      )
+    );
+    togglePlaceDropdown(contestantName);
+  };
+
+  const getPlaceText = (place: number) => {
+    if (place === 0) return "Not ranked";
+    if (place === 1) return "1st place";
+    if (place === 2) return "2nd place";
+    if (place === 3) return "3rd place";
+    return `${place}th place`;
   };
 
   return (
@@ -231,30 +241,38 @@ export default function ContestsScreen() {
               onChangeText={setContestDate}
             />
 
-            <Text style={styles.label}>Contest Places</Text>
-            {places.map((place, index) => (
-              <View key={index} style={styles.placeContainer}>
-                <Text style={styles.placeNumber}>{place.place}.</Text>
+            <Text style={styles.label}>Contestant Rankings</Text>
+            <Text style={styles.subLabel}>Assign places to contestants (ties allowed)</Text>
+            
+            {contestants.map((contestant) => (
+              <View key={contestant.name} style={styles.contestantContainer}>
+                <Text style={styles.contestantName}>{contestant.name}</Text>
                 <View style={styles.placeInputContainer}>
                   <TouchableOpacity 
                     style={styles.placeInput} 
-                    onPress={() => toggleContestantDropdown(index)}
+                    onPress={() => togglePlaceDropdown(contestant.name)}
                   >
-                    <Text style={place.name ? styles.inputText : styles.placeholderText}>
-                      {place.name || `Select name for ${place.place}${place.place === 1 ? 'st' : place.place === 2 ? 'nd' : place.place === 3 ? 'rd' : 'th'} place`}
+                    <Text style={contestant.place ? styles.inputText : styles.placeholderText}>
+                      {contestant.place ? getPlaceText(contestant.place) : "Select place"}
                     </Text>
-                    <Ionicons name={showContestantDropdowns[index] ? "chevron-up" : "chevron-down"} size={20} color="#aaa" />
+                    <Ionicons name={showPlaceDropdowns[contestant.name] ? "chevron-up" : "chevron-down"} size={20} color="#aaa" />
                   </TouchableOpacity>
                   
-                  {showContestantDropdowns[index] && (
+                  {showPlaceDropdowns[contestant.name] && (
                     <View style={styles.contestantDropdown}>
-                      {CONTESTANTS.map((contestant) => (
+                      <TouchableOpacity 
+                        style={styles.dropdownItem} 
+                        onPress={() => selectPlace(contestant.name, 0)}
+                      >
+                        <Text style={styles.dropdownText}>Not ranked</Text>
+                      </TouchableOpacity>
+                      {PLACES.map((place) => (
                         <TouchableOpacity 
-                          key={contestant} 
+                          key={place} 
                           style={styles.dropdownItem} 
-                          onPress={() => selectContestant(index, contestant)}
+                          onPress={() => selectPlace(contestant.name, place)}
                         >
-                          <Text style={styles.dropdownText}>{contestant}</Text>
+                          <Text style={styles.dropdownText}>{getPlaceText(place)}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -333,6 +351,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '600',
   },
+  subLabel: {
+    color: '#aaa',
+    fontSize: 14,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
   input: {
     backgroundColor: '#444',
     borderRadius: 5,
@@ -371,17 +395,18 @@ const styles = StyleSheet.create({
     padding: 12,
     fontStyle: 'italic',
   },
-  placeContainer: {
+  // New styles for contestant-based placement
+  contestantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
   },
-  placeNumber: {
-    color: '#ffd33d',
+  contestantName: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 10,
-    width: 20,
+    fontWeight: '500',
+    width: '30%',
   },
   placeInputContainer: {
     flex: 1,
